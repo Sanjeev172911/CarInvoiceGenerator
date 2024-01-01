@@ -1,11 +1,13 @@
+import java.util.ArrayList;
+
 public class Passenger {
-    static int cnt=0;
     int passengerId;
     boolean isPremium;
-    InvoiceGenerator invoiceApp;
+    ArrayList<Ride>allRides;
 
-    Passenger(){
-        passengerId=++cnt;
+    Passenger(int id){
+        this.passengerId=id;
         isPremium=false;
+        allRides=new ArrayList<Ride>();
     }
 }

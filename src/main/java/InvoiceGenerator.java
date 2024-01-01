@@ -1,4 +1,5 @@
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Map;
 
 public class InvoiceGenerator {
@@ -20,11 +21,23 @@ public class InvoiceGenerator {
 
     public double totalFareForMultipleRide(ArrayList<Ride>rides){
         double totalCost=0;
-
         for(Ride ride:rides){
             totalCost+=totalFare(ride.distance,ride.time);
         }
-
         return totalCost;
     }
+
+    public ArrayList<Double> generateInvoice(ArrayList<Ride>allRides){
+        ArrayList<Double>list=new ArrayList<>();
+
+        Double cntRides=(double)allRides.size();
+        list.add(cntRides);
+        Double totalFare=totalFareForMultipleRide(allRides);
+        list.add(totalFare);
+        Double averageFarePerRide=totalFare/cntRides;
+        Double roundedValue = Math.round(averageFarePerRide * 100.0) / 100.0;
+        list.add(roundedValue);
+        return list;
+    }
+
 }

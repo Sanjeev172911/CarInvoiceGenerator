@@ -70,7 +70,9 @@ public class InvoiceTest {
                         new Ride(12,40),
                         new Ride(5,15),
                         new Ride(.1,3))
-            ),230)
+            ),230),
+            Arguments.of(
+                    new ArrayList<Ride>(),0)
         );
     }
 
@@ -79,5 +81,50 @@ public class InvoiceTest {
     public void multipleRidesTotalFare(ArrayList<Ride> rides,double totalCost){
         assertEquals(totalCost,invoiceGenerator.totalFareForMultipleRide(rides));
     }
+
+    static Stream<Arguments>InvoiceData(){
+        return Stream.of(
+                Arguments.of(
+                        new ArrayList<Ride>(Arrays.asList(
+                                new Ride(2,10),
+                                new Ride(5,25))
+                        ),new ArrayList<Double>(
+                                Arrays.asList(
+                                    2.0,
+                                    105.0,
+                                    52.5
+                                )
+                        )),
+                Arguments.of(
+                        new ArrayList<Ride>(Arrays.asList(
+                                new Ride(12,40),
+                                new Ride(5,15),
+                                new Ride(.1,3))
+                        ),new ArrayList<Double>(
+                                Arrays.asList(
+                                        3.0,
+                                        230.0,
+                                        76.67
+                                )
+                        )),
+                Arguments.of(
+                        new ArrayList<Ride>(),
+                        new ArrayList<Double>(
+                                Arrays.asList(
+                                        0.0,
+                                        0.0,
+                                        0.0
+                                )
+                        ))
+        );
+    }
+
+    @ParameterizedTest
+    @MethodSource("InvoiceData")
+    public void InvoiceTestForACustomer(ArrayList<Ride> rides,ArrayList<Double>result){
+        assertEquals(result,invoiceGenerator.generateInvoice(rides));
+    }
+
+
 
 }
