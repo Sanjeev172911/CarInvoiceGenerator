@@ -15,62 +15,75 @@ public class InvoiceTest {
 
     @BeforeAll
     public static void initializeInvoiceGenerator(){
-        invoiceGenerator=new InvoiceGenerator(10,1,5);
+        invoiceGenerator=new InvoiceGenerator(10,1,5,
+                15,2,20);
     }
 
     @Test
     public void totalFareTest(){
-        assertEquals(60,invoiceGenerator.totalFare(5,10));
+        assertEquals(60,invoiceGenerator.totalFare(5,10,false));
     }
 
     @Test
+    public void totalFareTestForPremium(){
+        assertEquals(95,invoiceGenerator.totalFare(5,10,true));
+    }
+
+
+    @Test
     public void totalFareMinimumCostTest(){
-        assertEquals(5,invoiceGenerator.totalFare(.2,2));
+        assertEquals(5,invoiceGenerator.totalFare(.1,2,false));
+    }
+
+    @Test
+    public void totalFareMinimumCostTestForPremium(){
+        assertEquals(20,invoiceGenerator.totalFare(1,2,true));
     }
 
     @ParameterizedTest
     @ValueSource(
             strings = {
-                    "-2.2,2",
-                    "2.4,-.3",
-                    "-4.0,-6"
+                    "-2.2,2,false",
+                    "2.4,-.3,true",
+                    "-4.0,-6,true"
             }
     )
     public void totalFareInvalidInputTest(String values){
         String[] valueArray = values.split(",");
         double distance = Double.parseDouble(valueArray[0]);
         double time = Double.parseDouble(valueArray[1]);
-        assertEquals(0,invoiceGenerator.totalFare(distance,time));
+        boolean isPremium=Boolean.parseBoolean(valueArray[2]);
+        assertEquals(0,invoiceGenerator.totalFare(distance,time,isPremium));
     }
 
     static Stream<Arguments> InvalidTotalFareTestCase() {
         return Stream.of(
-                Arguments.of(-1, -2),    // Test case 1
-                Arguments.of(0, 0),    // Test case 2
-                Arguments.of(-1, 1),   // Test case 3
-                Arguments.of(10, -5)   // Test case 4
+                Arguments.of(-1, -2,false),    // Test case 1
+                Arguments.of(0, 0,true),    // Test case 2
+                Arguments.of(-1, 1,false),   // Test case 3
+                Arguments.of(10, -5,false)   // Test case 4
         );
     }
 
     @ParameterizedTest
     @MethodSource("InvalidTotalFareTestCase")
-    public void totalFareInvalidInputTest(double distance,double time){
-        assertEquals(0,invoiceGenerator.totalFare(distance,time));
+    public void totalFareInvalidInputTest(double distance,double time,boolean isPremium){
+        assertEquals(0,invoiceGenerator.totalFare(distance,time,isPremium));
     }
 
     static Stream<Arguments>multipleRides(){
         return Stream.of(
             Arguments.of(
             new ArrayList<Ride>(Arrays.asList(
-                        new Ride(2,10),
-                        new Ride(5,25))
-              ),105),
+                        new Ride(2,10,false),
+                        new Ride(5,25,true))
+              ),155),
             Arguments.of(
             new ArrayList<Ride>(Arrays.asList(
-                        new Ride(12,40),
-                        new Ride(5,15),
-                        new Ride(.1,3))
-            ),230),
+                        new Ride(12,40,false),
+                        new Ride(5,15,true),
+                        new Ride(.1,3,true))
+            ),285),
             Arguments.of(
                     new ArrayList<Ride>(),0)
         );
@@ -80,51 +93,74 @@ public class InvoiceTest {
     @MethodSource("multipleRides")
     public void multipleRidesTotalFare(ArrayList<Ride> rides,double totalCost){
         assertEquals(totalCost,invoiceGenerator.totalFareForMultipleRide(rides));
-    }
+   }
 
     static Stream<Arguments>InvoiceData(){
         return Stream.of(
                 Arguments.of(
                         new ArrayList<Ride>(Arrays.asList(
-                                new Ride(2,10),
-                                new Ride(5,25))
-                        ),new ArrayList<Double>(
-                                Arrays.asList(
-                                    2.0,
-                                    105.0,
-                                    52.5
-                                )
-                        )),
+                                new Ride(2,10,false),
+                                new Ride(5,25,true))
+                        ),new Invoice(2,155,77.50),
                 Arguments.of(
                         new ArrayList<Ride>(Arrays.asList(
-                                new Ride(12,40),
-                                new Ride(5,15),
-                                new Ride(.1,3))
-                        ),new ArrayList<Double>(
-                                Arrays.asList(
-                                        3.0,
-                                        230.0,
-                                        76.67
-                                )
-                        )),
+                                new Ride(12,40,false),
+                                new Ride(5,15,true),
+                                new Ride(.1,3,true))
+                        ),new Invoice(3,285,95.0)),
                 Arguments.of(
                         new ArrayList<Ride>(),
-                        new ArrayList<Double>(
-                                Arrays.asList(
-                                        0.0,
-                                        0.0,
-                                        0.0
-                                )
+                        new Invoice(0,0,0)
                         ))
         );
     }
 
     @ParameterizedTest
     @MethodSource("InvoiceData")
-    public void InvoiceTestForACustomer(ArrayList<Ride> rides,ArrayList<Double>result){
-        assertEquals(result,invoiceGenerator.generateInvoice(rides));
+    public void InvoiceTestForMultipleRides(ArrayList<Ride> rides,Invoice invoice){
+        Invoice generatedInvoice=invoiceGenerator.generateInvoice(rides);
+        assertEquals(invoice.ridesCnt,generatedInvoice.ridesCnt);
+        assertEquals(invoice.totalFare,generatedInvoice.totalFare);
+        assertEquals(invoice.averageFarePerRide,generatedInvoice.averageFarePerRide);
+    }
+
+    private Invoice generateInvoiceViaIdTest(int Id){
+        int id=11;
+        Passenger newPassenger=new Passenger(id);
+        PassengerBuilder passengerBuilder=new PassengerBuilder();
+
+        passengerBuilder.addPassenger(id);
+
+        passengerBuilder.addRide(id,12.0,40,false);
+        passengerBuilder.addRide(id,5.0,15,true);
+        passengerBuilder.addRide(id,.1,3,true);
+
+        ArrayList<Ride>allRides= null;
+        try {
+            allRides = passengerBuilder.getAllRides(Id);
+        } catch (InvalidUserException e) {
+            throw new RuntimeException(e);
+        }
+        return invoiceGenerator.generateInvoice(allRides);
     }
 
 
+    @Test
+    public void InvoiceTestForMultipleRidesUsingPassengerId(){
+        Invoice invoice=new Invoice(3,285,95);
+        Invoice generatedInvoice=generateInvoiceViaIdTest(11);
+        assertEquals(invoice.ridesCnt,generatedInvoice.ridesCnt);
+        assertEquals(invoice.totalFare,generatedInvoice.totalFare);
+        assertEquals(invoice.averageFarePerRide,generatedInvoice.averageFarePerRide);
+    }
+
+    @Test
+    public void InvoiceTestWhereUserIsInvalid(){
+        try{
+            invoiceGenerator.generateInvoiceViaId(12);
+        }catch(Exception e){
+            assertEquals("User not found",e.getMessage());
+        }
+    }
 
 }

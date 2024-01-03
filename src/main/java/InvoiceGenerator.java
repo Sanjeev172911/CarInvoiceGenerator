@@ -6,38 +6,58 @@ public class InvoiceGenerator {
     double costPerKm;
     double costPerMin;
     double minFare;
+    double costPerKmPremium;
+    double costPerMinPremium;
+    double minFarePremium;
 
-    InvoiceGenerator(double costPerKm,double costPerMin,double minFare){
-        this.costPerKm=costPerKm;
-        this.costPerMin=costPerMin;
-        this.minFare=minFare;
+    public InvoiceGenerator(double costPerKm, double costPerMin, double minFare, double costPerKmPremium, double costPerMinPremium, double minFarePremium) {
+        this.costPerKm = costPerKm;
+        this.costPerMin = costPerMin;
+        this.minFare = minFare;
+        this.costPerKmPremium = costPerKmPremium;
+        this.costPerMinPremium = costPerMinPremium;
+        this.minFarePremium = minFarePremium;
     }
 
-    public double totalFare(double distance,double time){
+    public double totalFare(double distance,double time,boolean isPremium){
         if(distance<=0 || time<=0) return 0.0;
+        if(isPremium){
+            double totalFare=distance*costPerKmPremium+time*costPerMinPremium;
+            return Math.max(totalFare,minFarePremium);
+        }
+
         double totalFare=distance*costPerKm+time*costPerMin;
-        return Math.max(totalFare,5.0);
+        return Math.max(totalFare,minFare);
     }
 
     public double totalFareForMultipleRide(ArrayList<Ride>rides){
         double totalCost=0;
         for(Ride ride:rides){
-            totalCost+=totalFare(ride.distance,ride.time);
+            totalCost+=totalFare(ride.distance,ride.time,ride.isPremium);
         }
         return totalCost;
     }
 
-    public ArrayList<Double> generateInvoice(ArrayList<Ride>allRides){
-        ArrayList<Double>list=new ArrayList<>();
-
-        Double cntRides=(double)allRides.size();
-        list.add(cntRides);
+    public Invoice generateInvoice(ArrayList<Ride>allRides){
+        int cntRides=allRides.size();
         Double totalFare=totalFareForMultipleRide(allRides);
-        list.add(totalFare);
         Double averageFarePerRide=totalFare/cntRides;
         Double roundedValue = Math.round(averageFarePerRide * 100.0) / 100.0;
-        list.add(roundedValue);
-        return list;
+
+        return new Invoice(cntRides,totalFare,averageFarePerRide);
     }
+
+    public Invoice generateInvoiceViaId(int Id) throws InvalidUserException {
+        ArrayList<Ride>allRides;
+        PassengerBuilder passengerBuilder=new PassengerBuilder();
+        try {
+            allRides=passengerBuilder.getAllRides(Id);
+        } catch (InvalidUserException e) {
+            throw new InvalidUserException(e.getMessage());
+        }
+
+        return generateInvoice(allRides);
+    }
+
 
 }
